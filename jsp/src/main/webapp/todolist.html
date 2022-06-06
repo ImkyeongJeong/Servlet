@@ -129,72 +129,70 @@ input {
 
 <div id="myDIV" class="header">
   <h2 style="margin:5px">My To Do List</h2>
-  <form name="myform" action="todolist" method="post">
   <input type="text" id="myInput" placeholder="Title..." name="todo">
-  <input type="hidden" name="cmd" value=" ">
   <span onclick="newElement()" class="addBtn">Add</span>
   </form>
 </div>
 
 <ul id="myUL">
-  <li>Hit the gym</li>
-  <li class="checked">Pay bills</li>
-  <li>Meet George</li>
-  <li>Buy eggs</li>
-  <li>Read a book</li>
-  <li>Organize office</li>
 </ul>
 
 <script>
-//조회
-let myform = document.forms.myform;
-let xhtp = new XMLHttpRequest();
-xhtp.open('GET','todolist')
-xhtp.send()
-xhtp.onload = function(){ 
-	console.log(xhtp.responseText);
-	let result = JSON.parse(xhtp.responseText); //parse: json -> object형태로 변경
-	console.log(result);
-	//li추가
-	result.forEach(function (el){
-		console.log(el.content);
-		let li = document.createElement('li');
-		li.innerText = el.content;
-	    document.getElementById("myUL").appendChild(li);
-	    
-	    var span = document.createElement("SPAN");
-	    var txt = document.createTextNode("\u00D7");
-	    span.className = "close";
-	    span.appendChild(txt);
-	    li.appendChild(span);
-	});
-}
 
-//입력
- document.querySelector('.addBtn').addEventListener('click', addCall);
- function addCall(e) {
-   let todo = document.querySelector('#myInput').value;
- 	fetch('todolist', {
- 		method: 'POST',
- 		headers: {'Content-type': 'application/x-www-form-urlencoded'},
- 		body: 'todo=' + todo
- 		})
- 		.then(result => {
- 			console.log(result);
- 		})
- 		.catch(err => console.log(err));
- 	}
- 
-// Create a "close" button and append it to each list item
-var myNodelist = document.getElementsByTagName("LI");
-var i;
-for (i = 0; i < myNodelist.length; i++) {
-  var span = document.createElement("SPAN");
-  var txt = document.createTextNode("\u00D7");
-  span.className = "close";
-  span.appendChild(txt);
-  myNodelist[i].appendChild(span);
-}
+let ul = document.getElementById('myUL');
+
+//페이지 로딩 시 DB항목 조회
+fetch('todolist')
+	.then(result => result.json()) 					 //result.json=> json형태 문자열을 배열로 변경
+	.then(res => { console.log(res); showList(res)}) //res=> result.json한 값
+	.catch( err => console.log(err))
+	
+	function showList(res){
+		//res길이만큼 li생성
+		for(let i = 0; i < res.length; i++){
+	      let li = document.createElement('li');
+	      let hd = document.createElement('input');
+	      hd.type = "hidden"; //같음 : hd.setAttribute('type', 'hidden');
+	      hd.name = "todoId"; //같음 : hd.setAttribute('name', 'todoId')
+	      hd.value = res[i].todoId;
+	      
+	      //if(res[i].checked==1){
+	      //   li.className = "checked"; //같음: li.setAttribute('class', 'checked');
+	      //}
+	      
+	      li.innerText = res[i].content;
+	      li.append(hd);
+	      ul.append(li);
+	      
+	      //X표시
+	      var span = document.createElement("SPAN");
+	      var txt = document.createTextNode("\u00D7");
+	      span.className = "close";
+	      span.appendChild(txt);
+	      li.append(span);
+	      
+	      //x클릭 시 삭제
+	      span.onclick = function(e){
+	    	  
+	    	  close[i].onclick = function() {
+	    		    var div = this.parentElement;
+	    		    div.style.display = "none";
+	    		    let todoId = div.children[0].value;
+	    		    console.log(todoId);
+	  	    	  //delete
+		    		fetch('todolist', {
+		    	 		method: 'POST',
+		    	 		headers: {'Content-type': 'application/x-www-form-urlencoded'},
+		    	 		body: 'cmd=delete&todoId=' + todoId
+		    	 		})
+		    	 		.then(result => {
+		    	 			console.log(result);
+		    	 		})
+		    	 		.catch(err => console.log(err));
+	    		  }
+	      }
+		}
+	}
 
 // Click on a close button to hide the current list item
 var close = document.getElementsByClassName("close");
@@ -216,10 +214,23 @@ list.addEventListener('click', function(ev) {
 
 // Create a new list item when clicking on the "Add" button
 function newElement() {
+	
   var li = document.createElement("li");
   var inputValue = document.getElementById("myInput").value;
   var t = document.createTextNode(inputValue);
   li.appendChild(t);
+
+  //insert
+	fetch('todolist', {
+ 		method: 'POST',
+ 		headers: {'Content-type': 'application/x-www-form-urlencoded'},
+ 		body: 'cmd=insert&todo=' + inputValue
+ 		})
+ 		.then(result => {
+ 			console.log(result);
+ 		})
+ 		.catch(err => console.log(err));
+	
   if (inputValue === '') {
     alert("You must write something!");
   } else {
